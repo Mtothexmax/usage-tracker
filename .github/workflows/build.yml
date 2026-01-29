@@ -72,3 +72,16 @@ jobs:
 
       - name: Build
         run: pnpm tauri build
+
+      - name: List built bundles
+        run: |
+          echo "Bundles in src-tauri/target/release/bundle:"
+          ls -la src-tauri/target/release/bundle || true
+          echo "Recursive listing:" 
+          ls -laR src-tauri/target/release/bundle || true
+
+      - name: Upload built bundles as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-${{ matrix.os }}-${{ github.run_id }}
+          path: src-tauri/target/release/bundle/**
