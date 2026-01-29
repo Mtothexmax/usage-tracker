@@ -1,67 +1,53 @@
-# Tauri 2 Svelte 5 Shadcn
+# Usage Tracker & Break Reminder
 
-Simple boilerplate for Tauri 2 with Svelte 5 (and shadcn-svelte).
+A specialized desktop application built with **Tauri 2**, **Svelte 5 (Runes)**, and **shadcn-svelte**. It monitors your computer usage, provides a detailed activity heatmap, and reminds you to take breaks using a smart tracking system.
 
-## Requirements
+## Features
 
-In order to run this boilerplate, you need to install Node (via nvm) and Rust. If you are on Windows I also recommend installing MSVC before the other dependencies (make sure to check the "Desktop development with C++" workload).
+- **Activity Tracking**: Automatically records active sessions by monitoring mouse/keyboard input and media playback.
+- **Smart Break Reminders**: 
+  - Monitors continuous activity and triggers a subtle reminder after a configurable threshold (default 55 minutes).
+  - **Dynamic Phases**: Starts with a small, transparent countdown at the top of the screen. If you stop moving, it transitions to a full "Break" mode.
+  - **Auto-Dismiss**: If you continue working through the reminder countdown, it automatically dismisses itself until your next work cycle.
+- **Visual Heatmap**: View your usage history over the last year with a GitHub-style activity heatmap.
+- **Session Details**: Click any day to see a breakdown of active sessions and break durations.
+- **Customizable Settings**:
+  - Toggle break reminders on/off.
+  - Set custom work thresholds and idle timeouts.
+  - **Fullscreen Overlay**: Optional fullscreen SVG background (using a custom background asset) to make breaks more immersive.
+  - **Debug View**: Real-time technical stats for tracking idle gaps and activity status.
+- **Tray-First Design**: Starts minimized to the system tray to stay out of your way.
 
-Some useful links:
+## Tech Stack
 
-- https://github.com/coreybutler/nvm-windows/releases (Windows: pick the nvm installer)
-- https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating (Linux: run `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash`)
-- https://www.rust-lang.org/tools/install
-- https://visualstudio.microsoft.com/vs/community/
+- **Frontend**: Svelte 5 (Runes), Tailwind CSS (v4), shadcn-svelte.
+- **Backend**: Rust, Tauri 2, SQLite (via `rusqlite`) for local data persistence.
+- **UI/UX**: Material Design principles, Lucide icons, and Framer Motion-like animations via Svelte's native transitions.
 
-## Setup
+## Getting Started
 
-1. Click the "Use this template" button on GitHub.
-2. Clone your newly created repository:
+### Prerequisites
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Node.js](https://nodejs.org/) (v18+)
+- Standard Tauri build dependencies for your OS.
+
+### Installation
+
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
    ```
-   git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
-   cd YOUR_REPOSITORY_NAME
-   ```
-3. Install dependencies:
-   ```
-   npm i
+3. Run in development mode:
+   ```bash
+   npm run tauri dev
    ```
 
-## Useful commands
+## Configuration
 
-### Start dev server
-
-```
-npm run tauri dev
-```
-
-### Build executable
-
-```
-npm run tauri build
-```
-
-### Add shadcn-svelte component
-
-```
-npx shadcn-svelte@next add <component>
-```
-
-Replace `<component>` with the name of the component you want to add (e.g., button, card, dialog). You can find the full list of available components at https://next.shadcn-svelte.com/docs/components.
-
-## Other links
-
-### Svelte 5
-
-https://svelte.dev/docs
-
-### Tauri 2
-
-https://tauri.app/start/
-
-### shadcn-svelte
-
-https://next.shadcn-svelte.com/
+Settings are stored locally in your application data directory (`config.json`). You can modify these directly through the in-app Settings menu (accessible via the gear icon in the top-right corner).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT
