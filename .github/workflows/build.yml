@@ -74,6 +74,7 @@ jobs:
         run: pnpm tauri build
 
       - name: List built bundles
+        shell: bash
         run: |
           echo "Bundles in src-tauri/target/release/bundle:"
           ls -la src-tauri/target/release/bundle || true
