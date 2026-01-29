@@ -83,5 +83,5 @@ jobs:
       - name: Upload built bundles as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bundles-${{ matrix.os }}-${{ github.run_id }}
+          name: bundles-${{ matrix.target }}-${{ github.run_id }}
           path: src-tauri/target/release/bundle/**
