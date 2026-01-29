@@ -1,0 +1,43 @@
+i want to track usage also when a video is played and the mouse is not moving for 5 minutes. is there a general way how to do that in rust? or does it have to be implemented os specific
+
+
+
+
+
+something like this
+
+
+
+#[cfg(target_os = "windows")]
+fn is_media_playing() -> bool {
+    // Use windows-rs to check GlobalSystemMediaTransportControls
+    true // simplified
+}
+
+#[cfg(target_os = "macos")]
+fn is_media_playing() -> bool {
+    // Check pmset assertions for 'PreventUserIdleDisplaySleep'
+    true // simplified
+}
+
+fn check_activity() {
+    let idle_time = get_idle_time(); // Using device_query
+    
+    if idle_time < Duration::from_mins(5) {
+        log_active();
+    } else if is_media_playing() {
+        log_active(); // Still active because video is on!
+    } else {
+        log_idle();
+    }
+}
+
+
+
+
+also when i do not reload the ui the time is sometimes not counted up. can there be a regular ui update?
+
+
+also can you please make the details view in the bottom only show the summed up time and only when one clicks on more details one sees a popup that shows the sessions + breaks.
+
+also please remove the text usage tracker and monitor your computer activity patterns

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Usage Tracker</title>
+    <meta name="description" content="Track your computer usage with GitHub-style contribution calendar visualization">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'usage-0': '#ebedf0',
+                        'usage-1': '#9be9a8',
+                        'usage-2': '#40c463',
+                        'usage-3': '#30a14e',
+                        'usage-4': '#216e39'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .tooltip {
+            position: absolute;
+            z-index: 10;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+        }
+        
+        .day-cell:hover .tooltip {
+            opacity: 1;
+        }
+        
+        .usage-bar {
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <header class="bg-white shadow-sm">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-desktop text-blue-600 text-xl"></i>
+                    <h1 class="text-xl font-bold text-gray-800">PC Usage Tracker</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="addUsageBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Usage
+                    </button>
+                    <button id="settingsBtn" class="p-2 text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-cog text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Stats Overview -->
+        <div class="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                        <i class="fas fa-clock text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Today's Usage</p>
+                        <p id="todayUsage" class="text-2xl font-bold text-gray-800">4h 32m</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-100 rounded-lg mr-4">
+                        <i class="fas fa-calendar-alt text-green-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">This Week</p>
+                        <p id="weekUsage" class="text-2xl font-bold text-gray-800">28h 15m</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                        <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Daily Average</p>
+                        <p id="avgUsage" class="text-2xl font-bold text-gray-800">5h 38m</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                        <i class="fas fa-fire text-yellow-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">Current Streak</p>
+                        <p id="streak" class="text-2xl font-bold text-gray-800">14 days</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Calendar -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Usage Calendar</h2>
+                    <p class="text-gray-600">Click on any day to view detailed usage information</p>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">Less</span>
+                        <div class="flex space-x-1">
+                            <div class="w-4 h-4 bg-usage-0 rounded-sm"></div>
+                            <div class="w-4 h-4 bg-usage-1 rounded-sm"></div>
+                            <div class="w-4 h-4 bg-usage-2 rounded-sm"></div>
+                            <div class="w-4 h-4 bg-usage-3 rounded-sm"></div>
+                            <div class="w-4 h-4 bg-usage-4 rounded-sm"></div>
+                        </div>
+                        <span class="text-sm text-gray-600">More</span>
+                    </div>
+                    <select id="yearSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="overflow-x-auto">
+                <div id="calendarContainer" class="flex space-x-2 pb-4">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Day Details Panel -->
+        <div id="dayDetailsPanel" class="bg-white rounded-lg shadow-sm p-6 hidden animate-slide-up">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="selectedDayTitle" class="text-lg font-bold text-gray-800"></h3>
+                <button id="closeDetailsBtn" class="p-2 text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1">Total Usage</p>
+                    <p id="dayTotalUsage" class="text-2xl font-bold text-gray-800">-</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1">Sessions</p>
+                    <p id="daySessions" class="text-2xl font-bold text-gray-800">-</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 mb-1">Longest Break</p>
+                    <p id="dayLongestBreak" class="text-2xl font-bold text-gray-800">-</p>
+                </div>
+            </div>
+
+            <!-- Timeline Visualization -->
+            <div class="mb-6">
+                <h4 class="font-medium text-gray-700 mb-4">Usage Timeline</h4>
+                <div id="timelineContainer" class="space-y-4">
+                    <!-- Timeline items will be generated here -->
+                </div>
+            </div>
+
+            <!-- Session Details -->
+            <div>
+                <h4 class="font-medium text-gray-700 mb-4">Session Details</h4>
+                <div id="sessionsContainer" class="space-y-3">
+                    <!-- Session details will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Usage Modal -->
+        <div id="addUsageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-800">Add Usage Session</h3>
+                        <button id="closeModalBtn" class="p-2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="usageForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                            <input type="date" id="sessionDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                                <input type="time" id="startTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                                <input type="time" id="endTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
+                            <select id="activityType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="work">Work</option>
+                                <option value="study">Study</option>
+                                <option value="gaming">Gaming</option>
+                                <option value="creative">Creative</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                            <textarea id="sessionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Add any notes about this session..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Session</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-desktop text-blue-600"></i>
+                        <span class="font-medium text-gray-800">PC Usage Tracker</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Track your computer usage patterns and productivity</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Privacy</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Terms</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Help</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600">Export Data</a>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t text-center text-sm text-gray-500">
+                <p>© 2024 PC Usage Tracker. All usage data is stored locally in your browser.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // Define data at the beginning
+        const usageData = {
+            "2024": {
+                "01": { // January
+                    "01": {
+                        "totalMinutes": 420,
+                        "sessions": [
+                            { "start": "09:00", "end": "12:30", "duration": 210, "activity": "work", "notes": "Morning work session" },
+                            { "start": "14:00", "end": "17:30", "duration": 210, "activity": "work", "notes": "Afternoon work" }
+                        ],
+                        "breaks": [
+                            { "start": "12:30", "end": "14:00", "duration": 90 }
+                        ]
+                    },
+                    "02": {
+                        "totalMinutes": 360,
+                        "sessions": [
+                            { "start": "10:00", "end": "13:00", "duration": 180, "activity": "study", "notes": "Online course" },
+                            { "start": "15:00", "end": "18:00", "duration": 180, "activity": "study", "notes": "Project work" }
+                        ],
+                        "breaks": [
+                            { "start": "13:00", "end": "15:00", "duration": 120 }
+                        ]
+                    },
+                    "03": {
+                        "totalMinutes": 480,
+                        "sessions": [
+                            { "start": "08:30", "end": "12:30", "duration": 240, "activity": "work", "notes": "Client meeting" },
+                            { "start": "13:30", "end": "17:30", "duration": 240, "activity": "work", "notes": "Report writing" }
+                        ],
+                        "breaks": [
+                            { "start": "12:30", "end": "13:30", "duration": 60 }
+                        ]
+                    },
+                    "04": {
+                        "totalMinutes": 180,
+                        "sessions": [
+                            { "start": "19:00", "end": "22:00", "duration": 180, "activity": "gaming", "notes": "Gaming night" }
+                        ],
+                        "breaks": []
+                    },
+                    "05": {
+                        "totalMinutes": 300,
+                        "sessions": [
+                            { "start": "09:00", "end": "12:00", "duration": 180, "activity": "creative", "notes": "Design work" },
+                            { "start": "14:00", "end": "15:00", "duration": 60, "activity": "work", "notes": "Quick tasks" },
+                            { "start": "16:00", "end": "17:00", "duration": 60, "activity": "study", "notes": "Reading" }
+                        ],
+                        "breaks": [
+                            { "start": "12:00", "end": "14:00", "duration": 120 },
+                            { "start": "15:00", "end": "16:00", "duration": 60 }
+                        ]
+                    },
+                    "06": {
+                        "totalMinutes": 540,
+                        "sessions": [
+                            { "start": "08:00", "end": "12:00", "duration": 240, "activity": "work", "notes": "Deep work" },
+                            { "start": "13:00", "end": "18:00", "duration": 300, "activity": "work", "notes": "Project completion" }
+                        ],
+                        "breaks": [
+                            { "start": "12:00", "end": "13:00", "duration": 60 }
+                        ]
+                    },
+                    "07": {
+                        "totalMinutes": 0,
+                        "sessions": [],
+                        "breaks": []
+                    }
+                },
+                "02": { // February - sample data
+                    "01": { "totalMinutes": 240, "sessions": [{ "start": "10:00", "end": "14:00", "duration": 240, "activity": "work" }], "breaks": [] },
+                    "02": { "totalMinutes": 180, "sessions": [{ "start": "14:00", "end": "17:00", "duration": 180, "activity": "study" }], "breaks": [] },
+                    "03": { "totalMinutes": 360, "sessions": [{ "start": "09:00", "end": "15:00", "duration": 360, "activity": "work" }], "breaks": [] }
+                }
+            },
+            "2023": {
+                "12": { // December 2023
+                    "25": { "totalMinutes": 120, "sessions": [{ "start": "20:00", "end": "22:00", "duration": 120, "activity": "other" }], "breaks": [] },
+                    "26": { "totalMinutes": 300, "sessions": [{ "start": "10:00", "end": "15:00", "duration": 300, "activity": "work" }], "breaks": [] }
+                }
+            }
+        };
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        
+        // Initialize current year
+        let currentYear = "2024";
+        
+        // Utility functions
+        function formatTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        }
+        
+        function getUsageLevel(minutes) {
+            if (minutes === 0) return 0;
+            if (minutes <= 60) return 1;
+            if (minutes <= 180) return 2;
+            if (minutes <= 360) return 3;
+            return 4;
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString("en-US", { 
+                weekday: "long", 
+                year: "numeric", 
+                month: "long", 
+                day: "numeric" 
+            });
+        }
+        
+        function formatTimeRange(start, end) {
+            return `${start} - ${end}`;
+        }
+        
+        // Generate calendar
+        function generateCalendar(year) {
+            const container = document.getElementById("calendarContainer");
+            container.innerHTML = "";
+            
+            // Generate weeks for each month
+            for (let month = 1; month <= 12; month++) {
+                const monthData = usageData[year]?.[month.toString().padStart(2, "0")] || {};
+                const monthContainer = document.createElement("div");
+                monthContainer.className = "flex flex-col items-center";
+                
+                // Month label
+                const monthLabel = document.createElement("div");
+                monthLabel.className = "text-sm text-gray-600 mb-2 h-6 flex items-center";
+                monthLabel.textContent = monthNames[month - 1];
+                monthContainer.appendChild(monthLabel);
+                
+                // Weeks container
+                const weeksContainer = document.createElement("div");
+                weeksContainer.className = "flex flex-col space-y-1";
+                
+                // Get first day of month
+                const firstDay = new Date(year, month - 1, 1);
+                const startingDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                
+                // Calculate total days in month
+                const lastDay = new Date(year, month, 0);
+                const totalDays = lastDay.getDate();
+                
+                // Create weeks
+                let currentWeek = [];
+                let dayCount = 1;
+                
+                // Add empty cells for days before the first of the month
+                for (let i = 0; i < startingDay; i++) {
+                    currentWeek.push(null);
+                }
+                
+                // Add days of the month
+                while (dayCount <= totalDays) {
+                    if (currentWeek.length === 7) {
+                        weeksContainer.appendChild(createWeekRow(currentWeek, month, year));
+                        currentWeek = [];
+                    }
+                    
+                    const dayStr = dayCount.toString().padStart(2, "0");
+                    const monthStr = month.toString().padStart(2, "0");
+                    const dayData = monthData[dayStr];
+                    const totalMinutes = dayData?.totalMinutes || 0;
+                    
+                    currentWeek.push({
+                        day: dayCount,
+                        month: month,
+                        year: year,
+                        totalMinutes: totalMinutes,
+                        usageLevel: getUsageLevel(totalMinutes)
+                    });
+                    
+                    dayCount++;
+                }
+                
+                // Add remaining days in the last week
+                if (currentWeek.length > 0) {
+                    // Fill remaining slots with null
+                    while (currentWeek.length < 7) {
+                        currentWeek.push(null);
+                    }
+                    weeksContainer.appendChild(createWeekRow(currentWeek, month, year));
+                }
+                
+                monthContainer.appendChild(weeksContainer);
+                container.appendChild(monthContainer);
+            }
+            
+            updateStats();
+        }
+        
+        function createWeekRow(days, month, year) {
+            const weekRow = document.createElement("div");
+            weekRow.className = "flex space-x-1";
+            
+            days.forEach((dayData, index) => {
+                const dayCell = document.createElement("div");
+                dayCell.className = "day-cell relative";
+                
+                if (dayData) {
+                    const { day, totalMinutes, usageLevel } = dayData;
+                    const dateStr = `${year}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+                    
+                    dayCell.innerHTML = `
+                        <div class="w-4 h-4 rounded-sm bg-usage-${usageLevel} cursor-pointer hover:opacity-80 transition-opacity"
+                             data-date="${dateStr}"
+                             data-total="${totalMinutes}">
+                        </div>
+                        <div class="tooltip">
+                            <div class="font-medium">${formatDate(dateStr)}</div>
+                            <div>${totalMinutes > 0 ? formatTime(totalMinutes) : "No usage"}</div>
+                        </div>
+                    `;
+                    
+                    dayCell.addEventListener("click", () => showDayDetails(dateStr));
+                } else {
+                    dayCell.innerHTML = '<div class="w-4 h-4 rounded-sm bg-transparent"></div>';
+                }
+                
+                weekRow.appendChild(dayCell);
+            });
+            
+            return weekRow;
+        }
+        
+        function showDayDetails(dateStr) {
+            const [year, month, day] = dateStr.split("-");
+            const monthData = usageData[year]?.[month] || {};
+            const dayData = monthData[day] || { totalMinutes: 0, sessions: [], breaks: [] };
+            
+            // Update panel title
+            document.getElementById("selectedDayTitle").textContent = formatDate(dateStr);
+            
+            // Update stats
+            document.getElementById("dayTotalUsage").textContent = formatTime(dayData.totalMinutes);
+            document.getElementById("daySessions").textContent = dayData.sessions.length;
+            
+            // Calculate longest break
+            const longestBreak = dayData.breaks.reduce((max, breakItem) => 
+                Math.max(max, breakItem.duration), 0
+            );
+            document.getElementById("dayLongestBreak").textContent = formatTime(longestBreak);
+            
+            // Generate timeline
+            const timelineContainer = document.getElementById("timelineContainer");
+            timelineContainer.innerHTML = "";
+            
+            if (dayData.sessions.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-desktop text-3xl mb-3"></i>
+                        <p>No computer usage recorded for this day</p>
+                    </div>
+                `;
+            } else {
+                // Sort sessions by start time
+                const sortedSessions = [...dayData.sessions].sort((a, b) => 
+                    a.start.localeCompare(b.start)
+                );
+                
+                // Create timeline visualization
+                const totalMinutes = 24 * 60; // 24 hours in minutes
+                sortedSessions.forEach((session, index) => {
+                    const sessionStart = timeToMinutes(session.start);
+                    const sessionEnd = timeToMinutes(session.end);
+                    const sessionWidth = ((sessionEnd - sessionStart) / totalMinutes) * 100;
+                    const sessionLeft = (sessionStart / totalMinutes) * 100;
+                    
+                    const timelineItem = document.createElement("div");
+                    timelineItem.className = "relative";
+                    timelineItem.innerHTML = `
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${session.start} - ${session.end}</span>
+                            <span class="text-sm text-gray-600">${formatTime(session.duration)}</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-500 rounded-full" style="width: ${sessionWidth}%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${session.notes || "No notes"}</div>
+                    `;
+                    timelineContainer.appendChild(timelineItem);
+                });
+            }
+            
+            // Generate session details
+            const sessionsContainer = document.getElementById("sessionsContainer");
+            sessionsContainer.innerHTML = "";
+            
+            if (dayData.sessions.length > 0) {
+                dayData.sessions.forEach((session, index) => {
+                    const sessionDiv = document.createElement("div");
+                    sessionDiv.className = "bg-gray-50 p-4 rounded-lg";
+                    sessionDiv.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="font-medium text-gray-800">Session ${index + 1}</span>
+                                <span class="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                    ${session.activity}
+                                </span>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">${formatTime(session.duration)}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <div class="mb-1">
+                                <i class="far fa-clock mr-2"></i>
+                                ${session.start} - ${session.end}
+                            </div>
+                            ${session.notes ? `
+                                <div>
+                                    <i class="far fa-sticky-note mr-2"></i>
+                                    ${session.notes}
+                                </div>
+                            ` : ""}
+                        </div>
+                    `;
+                    sessionsContainer.appendChild(sessionDiv);
+                });
+            }
+            
+            // Show the details panel
+            const panel = document.getElementById("dayDetailsPanel");
+            panel.classList.remove("hidden");
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+        
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(":").map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function updateStats() {
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, "0")}-${today.getDate().toString().padStart(2, "0")}`;
+            const [year, month, day] = todayStr.split("-");
+            
+            // Today's usage
+            const todayData = usageData[year]?.[month]?.[day];
+            const todayUsage = todayData?.totalMinutes || 0;
+            document.getElementById("todayUsage").textContent = formatTime(todayUsage);
+            
+            // This week's usage (simplified calculation)
+            let weekTotal = 0;
+            const currentMonthData = usageData[year]?.[month] || {};
+            Object.values(currentMonthData).forEach(dayData => {
+                weekTotal += dayData.totalMinutes || 0;
+            });
+            document.getElementById("weekUsage").textContent = formatTime(weekTotal);
+            
+            // Daily average (this month)
+            const daysInMonth = Object.keys(currentMonthData).length;
+            const avgUsage = daysInMonth > 0 ? Math.round(weekTotal / daysInMonth) : 0;
+            document.getElementById("avgUsage").textContent = formatTime(avgUsage);
+            
+            // Streak calculation (simplified)
+            let streak = 0;
+            for (let d = today.getDate(); d > 0; d--) {
+                const dayStr = d.toString().padStart(2, "0");
+                if (currentMonthData[dayStr]?.totalMinutes > 0) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            document.getElementById("streak").textContent = `${streak} days`;
+        }
+        
+        // Initialize modal functionality
+        function initModal() {
+            const modal = document.getElementById("addUsageModal");
+            const openBtn = document.getElementById("addUsageBtn");
+            const closeBtn = document.getElementById("closeModalBtn");
+            const cancelBtn = document.getElementById("cancelBtn");
+            const form = document.getElementById("usageForm");
+            
+            openBtn.addEventListener("click", () => {
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+                
+                // Set today's date as default
+                const today = new Date().toISOString().split("T")[0];
+                document.getElementById("sessionDate").value = today;
+                
+                // Set default times
+                const now = new Date();
+                const startTime = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+                const endTime = now;
+                
+                document.getElementById("startTime").value = 
+                    startTime.toTimeString().slice(0, 5);
+                document.getElementById("endTime").value = 
+                    endTime.toTimeString().slice(0, 5);
+            });
+            
+            function closeModal() {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                form.reset();
+            }
+            
+            closeBtn.addEventListener("click", closeModal);
+            cancelBtn.addEventListener("click", closeModal);
+            
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                
+                const date = document.getElementById("sessionDate").value;
+                const startTime = document.getElementById("startTime").value;
+                const endTime = document.getElementById("endTime").value;
+                const activity = document.getElementById("activityType").value;
+                const notes = document.getElementById("sessionNotes").value;
+                
+                // Calculate duration in minutes
+                const startMinutes = timeToMinutes(startTime);
+                const endMinutes = timeToMinutes(endTime);
+                const duration = endMinutes - startMinutes;
+                
+                if (duration <= 0) {
+                    alert("End time must be after start time");
+                    return;
+                }
+                
+                // Add to data structure
+                const [year, month, day] = date.split("-");
+                
+                if (!usageData[year]) {
+                    usageData[year] = {};
+                }
+                if (!usageData[year][month]) {
+                    usageData[year][month] = {};
+                }
+                if (!usageData[year][month][day]) {
+                    usageData[year][month][day] = {
+                        totalMinutes: 0,
+                        sessions: [],
+                        breaks: []
+                    };
+                }
+                
+                const dayData = usageData[year][month][day];
+                const newSession = {
+                    start: startTime,
+                    end: endTime,
+                    duration: duration,
+                    activity: activity,
+                    notes: notes
+                };
+                
+                dayData.sessions.push(newSession);
+                dayData.totalMinutes += duration;
+                
+                // Sort sessions by start time
+                dayData.sessions.sort((a, b) => a.start.localeCompare(b.start));
+                
+                // Recalculate breaks
+                dayData.breaks = [];
+                for (let i = 0; i < dayData.sessions.length - 1; i++) {
+                    const currentEnd = timeToMinutes(dayData.sessions[i].end);
+                    const nextStart = timeToMinutes(dayData.sessions[i + 1].start);
+                    if (nextStart > currentEnd) {
+                        dayData.breaks.push({
+                            start: dayData.sessions[i].end,
+                            end: dayData.sessions[i + 1].start,
+                            duration: nextStart - currentEnd
+                        });
+                    }
+                }
+                
+                // Update calendar and stats
+                generateCalendar(currentYear);
+                updateStats();
+                
+                // Show success message
+                alert("Session added successfully!");
+                closeModal();
+            });
+        }
+        
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            // Generate initial calendar
+            generateCalendar(currentYear);
+            
+            // Initialize modal
+            initModal();
+            
+            // Year selector
+            document.getElementById("yearSelect").addEventListener("change", (e) => {
+                currentYear = e.target.value;
+                generateCalendar(currentYear);
+            });
+            
+            // Close details panel
+            document.getElementById("closeDetailsBtn").addEventListener("click", () => {
+                document.getElementById("dayDetailsPanel").classList.add("hidden");
+            });
+            
+            // Settings button
+            document.getElementById("settingsBtn").addEventListener("click", () => {
+                alert("Settings feature coming soon!");
+            });
+            
+            // Export data button (in footer)
+            document.querySelector('a[href="#"]').addEventListener("click", (e) => {
+                e.preventDefault();
+                if (e.target.textContent === "Export Data") {
+                    const dataStr = JSON.stringify(usageData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: "application/json" });
+                    const url = URL.createObjectURL(dataBlob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "pc-usage-data.json";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
