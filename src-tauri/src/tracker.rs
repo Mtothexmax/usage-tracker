@@ -131,14 +131,13 @@ pub fn start_tracker(handle: AppHandle, db: Arc<Mutex<Db>>, config: Arc<Mutex<Ap
                                 .resizable(true)
                                 .minimizable(false)
                                 .decorations(false)
-                                .transparent(true)
                                 .shadow(false)
                                 .visible(true)
                                 .build();
                         
                             if let Ok(win) = w {
                                 if let Some(monitor) = win.current_monitor().ok().flatten() {
-                                    let screen_size = monitor.size();
+                                    let screen_size: tauri::PhysicalSize<u32> = monitor.size();
                                     let scale_factor = monitor.scale_factor();
                                     let win_width = 400.0 * scale_factor;
                                     let x = (screen_size.width as f64 - win_width) / 2.0;

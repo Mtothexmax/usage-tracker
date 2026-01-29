@@ -72,15 +72,14 @@ async fn show_break_reminder(app: tauri::AppHandle) -> Result<(), String> {
         .resizable(true)
         .minimizable(false)
         .decorations(false)
-        .transparent(true)
         .shadow(false)
         .visible(true)
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e: tauri::Error| e.to_string())?;
     
     // Position at top center
     if let Some(monitor) = _window.current_monitor().ok().flatten() {
-        let screen_size = monitor.size();
+        let screen_size: tauri::PhysicalSize<u32> = monitor.size();
         let scale_factor = monitor.scale_factor();
         let win_width = 400.0 * scale_factor;
         let x = (screen_size.width as f64 - win_width) / 2.0;
