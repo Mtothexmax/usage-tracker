@@ -104,11 +104,13 @@ jobs:
           tag_name: ${{ github.ref_name }}
           fail_on_unmatched_files: false
           files: |
-            ./artifacts/bundles-*/**/*.dmg
-            ./artifacts/bundles-*/**/*.msi
-            ./artifacts/bundles-*/**/*.exe
-            ./artifacts/bundles-*/**/*.AppImage
-            ./artifacts/bundles-*/**/*.deb
-            ./artifacts/bundles-*/**/*.app.tar.gz
+            ./artifacts/bundles-x86_64-apple-darwin/**/*.dmg
+            ./artifacts/bundles-aarch64-apple-darwin/**/*.dmg
+            ./artifacts/bundles-x86_64-pc-windows-msvc/**/*.msi
+            ./artifacts/bundles-x86_64-pc-windows-msvc/**/*.exe
+            ./artifacts/bundles-x86_64-unknown-linux-gnu/**/*.AppImage
+            ./artifacts/bundles-x86_64-unknown-linux-gnu/**/*.deb
+            ./artifacts/bundles-x86_64-apple-darwin/**/*.app.tar.gz
+            ./artifacts/bundles-aarch64-apple-darwin/**/*.app.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
