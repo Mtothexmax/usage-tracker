@@ -132,6 +132,7 @@ pub fn start_tracker(handle: AppHandle, db: Arc<Mutex<Db>>, config: Arc<Mutex<Ap
                                 .minimizable(false)
                                 .decorations(false)
                                 .shadow(false)
+                                .transparent(true)
                                 .visible(true)
                                 .build();
                         
