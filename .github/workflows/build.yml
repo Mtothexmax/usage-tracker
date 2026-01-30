@@ -107,6 +107,12 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          files: ./artifacts/bundles-*/**
+          files: |
+            ./artifacts/bundles-*/**/*.dmg
+            ./artifacts/bundles-*/**/*.msi
+            ./artifacts/bundles-*/**/*.exe
+            ./artifacts/bundles-*/**/*.AppImage
+            ./artifacts/bundles-*/**/*.deb
+            ./artifacts/bundles-*/**/*.app.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
