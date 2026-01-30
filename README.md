@@ -1,5 +1,6 @@
 # Usage Tracker & Break Reminder
-<img width="1604" height="1400" alt="image" src="https://github.com/user-attachments/assets/cfa99033-1890-4c45-8e58-a2273da244fd" />
+<img width="1604" height="1400" alt="image" src="https://github.com/user-attachments/assets/a321e11b-6e51-4c69-af9e-242f25ff0200" />
+
 
 A specialized desktop application built with **Tauri 2**, **Svelte 5 (Runes)**, and **shadcn-svelte**. It monitors your computer usage, provides a detailed activity heatmap, and reminds you to take breaks using a smart tracking system.
 
