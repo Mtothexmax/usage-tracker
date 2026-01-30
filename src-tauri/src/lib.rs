@@ -73,6 +73,7 @@ async fn show_break_reminder(app: tauri::AppHandle) -> Result<(), String> {
         .minimizable(false)
         .decorations(false)
         .shadow(false)
+        .transparent(true)
         .visible(true)
         .build()
         .map_err(|e: tauri::Error| e.to_string())?;

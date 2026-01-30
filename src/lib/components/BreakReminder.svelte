@@ -73,6 +73,9 @@
             Stand up and stretch. If you stop moving now, a 5 minute break timer will start.
         </p>
         <div class="pt-2 flex gap-3 justify-center">
+            <Button variant="outline" class="bg-white text-red-600 hover:bg-white/90 border-none h-8 font-bold" onclick={onBreakStarted}>
+                Take Break
+            </Button>
             <Button variant="outline" class="bg-transparent border-white text-white hover:bg-white/20 h-8" onclick={closeWindow}>
                 Skip
             </Button>

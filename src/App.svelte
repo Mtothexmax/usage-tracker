@@ -61,7 +61,7 @@
 		{/if}
 	{:else}
 		<!-- Fallback while loading to avoid ghost window -->
-		<div class="h-screen w-screen bg-black/10 backdrop-blur-sm"></div>
+		<div class="h-screen w-screen bg-transparent"></div>
 	{/if}
 {:else}
 	<main
