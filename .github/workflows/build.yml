@@ -93,10 +93,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download x86_64 macOS bundle
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts
+          name: bundles-x86_64-apple-darwin
+          path: ./artifacts/x86_64-macos
+
+      - name: Download aarch64 macOS bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: bundles-aarch64-apple-darwin
+          path: ./artifacts/aarch64-macos
+
+      - name: Download Windows bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: bundles-x86_64-pc-windows-msvc
+          path: ./artifacts/windows
+
+      - name: Download Linux bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: bundles-x86_64-unknown-linux-gnu
+          path: ./artifacts/linux
 
       - name: Create release and upload binaries
         uses: softprops/action-gh-release@v1
@@ -104,13 +123,13 @@ jobs:
           tag_name: ${{ github.ref_name }}
           fail_on_unmatched_files: false
           files: |
-            ./artifacts/bundles-x86_64-apple-darwin/**/*.dmg
-            ./artifacts/bundles-aarch64-apple-darwin/**/*.dmg
-            ./artifacts/bundles-x86_64-pc-windows-msvc/**/*.msi
-            ./artifacts/bundles-x86_64-pc-windows-msvc/**/*.exe
-            ./artifacts/bundles-x86_64-unknown-linux-gnu/**/*.AppImage
-            ./artifacts/bundles-x86_64-unknown-linux-gnu/**/*.deb
-            ./artifacts/bundles-x86_64-apple-darwin/**/*.app.tar.gz
-            ./artifacts/bundles-aarch64-apple-darwin/**/*.app.tar.gz
+            ./artifacts/x86_64-macos/**/*.dmg
+            ./artifacts/aarch64-macos/**/*.dmg
+            ./artifacts/windows/**/*.msi
+            ./artifacts/windows/**/*.exe
+            ./artifacts/linux/**/*.AppImage
+            ./artifacts/linux/**/*.deb
+            ./artifacts/x86_64-macos/**/*.app.tar.gz
+            ./artifacts/aarch64-macos/**/*.app.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
